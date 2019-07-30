@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1064373683020",
+    "firebase_url": "https://appdogs.firebaseio.com",
+    "project_id": "appdogs",
+    "storage_bucket": "appdogs.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1064373683020:android:8fe7d036c6139dbe",
+        "android_client_info": {
+          "package_name": "diego.appdogs"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1064373683020-i4ri0ttl8m8qkjvh7vkrv80774t66vl1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "diego.appdogs",
+            "certificate_hash": "77f0a7efec89b9ad5c1ffff5356f2002cec4fe15"
+          }
+        },
+        {
+          "client_id": "1064373683020-7biultg4pfcjkjejd1dnl2gvcbjkcigb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwtGxTQLYXbqWiJO0GrFFgV80-p5k6GGw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1064373683020-7biultg4pfcjkjejd1dnl2gvcbjkcigb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
