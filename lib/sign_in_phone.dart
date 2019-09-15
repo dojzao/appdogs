@@ -7,139 +7,131 @@ class PhoneSignInSection extends StatefulWidget {
 }
 
 class _PhoneSignInSectionState extends State<PhoneSignInSection> {
-  String phoneNo;
-  String smsOTP;
-  String verificationId;
-  String errorMessage = '';
-  FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _smsController = TextEditingController();
 
-  Future<void> verifyPhone() async {
-    final PhoneCodeSent smsOTPSent = (String verId, [int forceCodeResend]) {
-      this.verificationId = verId;
-      smsOTPDialog(context).then((value) {
-        print('sign in');
-      });
-    };
-    try {
-      await _auth.verifyPhoneNumber(
-          phoneNumber: this.phoneNo, // PHONE NUMBER TO SEND OTP
-          codeAutoRetrievalTimeout: (String verId) {
-            //Starts the phone number verification process for the given phone number.
-            //Either sends an SMS with a 6 digit code to the phone number specified, or sign's the user in and [verificationCompleted] is called.
-            this.verificationId = verId;
-          },
-          codeSent:
-          smsOTPSent, // WHEN CODE SENT THEN WE OPEN DIALOG TO ENTER OTP.
-          timeout: const Duration(seconds: 20),
-          verificationCompleted: (AuthCredential phoneAuthCredential) {
-            print(phoneAuthCredential);
-          },
-          verificationFailed: (AuthException exceptio) {
-            print('${exceptio.message}');
-          });
-    } catch (e) {
-    }
-  }
-
-  Future<bool> smsOTPDialog(BuildContext context) {
-    return showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return new AlertDialog(
-            title: Text('Enter SMS Code'),
-            content: Container(
-              height: 85,
-              child: Column(children: [
-                TextField(
-                  onChanged: (value) {
-                    this.smsOTP = value;
-                  },
-                ),
-                (errorMessage != ''
-                    ? Text(
-                  errorMessage,
-                  style: TextStyle(color: Colors.red),
-                )
-                    : Container())
-              ]),
-            ),
-            contentPadding: EdgeInsets.all(10),
-            actions: <Widget>[
-              FlatButton(
-                child: Text('Done'),
-                onPressed: () {
-                  _auth.currentUser().then((user) {
-                    if (user != null) {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pushReplacementNamed('/homepage');
-                    } else {
-                      signIn();
-                    }
-                  });
-                },
-              )
-            ],
-          );
-        });
-  }
-
-  signIn() async {
-    try {
-      final AuthCredential credential = PhoneAuthProvider.getCredential(
-        verificationId: verificationId,
-        smsCode: smsOTP,
-      );
-      final FirebaseUser user = await _auth.signInWithCredential(credential);
-      final FirebaseUser currentUser = await _auth.currentUser();
-      assert(user.uid == currentUser.uid);
-      Navigator.of(context).pop();
-      Navigator.of(context).pushReplacementNamed('/homepage');
-    } catch (e) {
-    }
-  }
+  String _message = '';
+  String _verificationId;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Título"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.all(10),
-              child: TextField(
-                decoration: InputDecoration(
-                    hintText: 'Enter Phone Number Eg. +910000000000'),
-                onChanged: (value) {
-                  this.phoneNo = value;
-                },
-              ),
-            ),
-            (errorMessage != ''
-                ? Text(
-              errorMessage,
-              style: TextStyle(color: Colors.red),
-            )
-                : Container()),
-            SizedBox(
-              height: 10,
-            ),
-            RaisedButton(
-              onPressed: () {
-                verifyPhone();
-              },
-              child: Text('Verify'),
-              textColor: Colors.white,
-              elevation: 7,
-              color: Colors.blue,
-            )
-          ],
+    return new Scaffold(
+      body: new Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          child: const Text('Test sign in with phone number'),
+          padding: const EdgeInsets.all(16),
+          alignment: Alignment.center,
         ),
-      ),
+        TextFormField(
+          controller: _phoneNumberController,
+          decoration:
+          InputDecoration(labelText: 'Phone number (+x xxx-xxx-xxxx)'),
+          validator: (String value) {
+            if (value.isEmpty) {
+              return 'Phone number (+x xxx-xxx-xxxx)';
+            }
+            return null;
+          },
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          alignment: Alignment.center,
+          child: RaisedButton(
+            onPressed: () async {
+              _verifyPhoneNumber();
+            },
+            child: const Text('Verify phone number'),
+          ),
+        ),
+        TextField(
+          controller: _smsController,
+          decoration: InputDecoration(labelText: 'Verification code'),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          alignment: Alignment.center,
+          child: RaisedButton(
+            onPressed: () async {
+              _signInWithPhoneNumber();
+            },
+            child: const Text('Sign in with phone number'),
+          ),
+        ),
+        Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            _message,
+            style: TextStyle(color: Colors.red),
+          ),
+        )
+      ],
+    ));
+  }
+
+  // Example code of how to verify phone number
+  void _verifyPhoneNumber() async {
+    setState(() {
+      _message = '';
+    });
+    final PhoneVerificationCompleted verificationCompleted =
+        (AuthCredential phoneAuthCredential) {
+      _auth.signInWithCredential(phoneAuthCredential);
+      setState(() {
+        _message = 'Received phone auth credential: $phoneAuthCredential';
+      });
+    };
+
+    final PhoneVerificationFailed verificationFailed =
+        (AuthException authException) {
+      setState(() {
+        _message =
+        'Phone number verification failed. Code: ${authException.code}. Message: ${authException.message}';
+      });
+    };
+
+    final PhoneCodeSent codeSent =
+        (String verificationId, [int forceResendingToken]) async {
+      SnackBar(
+        content:
+        const Text('Please check your phone for the verification code.'),
+      );
+      _verificationId = verificationId;
+    };
+
+    final PhoneCodeAutoRetrievalTimeout codeAutoRetrievalTimeout =
+        (String verificationId) {
+      _verificationId = verificationId;
+    };
+
+    await _auth.verifyPhoneNumber(
+        phoneNumber: _phoneNumberController.text,
+        timeout: const Duration(seconds: 5),
+        verificationCompleted: verificationCompleted,
+        verificationFailed: verificationFailed,
+        codeSent: codeSent,
+        codeAutoRetrievalTimeout: codeAutoRetrievalTimeout);
+  }
+
+  // Example code of how to sign in with phone.
+  void _signInWithPhoneNumber() async {
+    final AuthCredential credential = PhoneAuthProvider.getCredential(
+      verificationId: _verificationId,
+      smsCode: _smsController.text,
     );
+    final FirebaseUser user =
+        (await _auth.signInWithCredential(credential));
+    final FirebaseUser currentUser = await _auth.currentUser();
+    assert(user.uid == currentUser.uid);
+    setState(() {
+      if (user != null) {
+        _message = 'Successfully signed in, uid: ' + user.uid;
+      } else {
+        _message = 'Sign in failed';
+      }
+    });
   }
 }
